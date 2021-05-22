@@ -60,7 +60,19 @@ Now for the tags system, I added following code to my existing system:
                       'tags)
 ```
 
-Then I added a keyboard shortcut to my filemanger that sends the command "tags /path/to/the/file" through the socket and the above snippet opens a zenity dialog box showing existing tags where I can edit the tags and apply changes. 
+Then I added a keyboard shortcut to my filemanger that sends the command "tags /path/to/the/file" through the socket and the above snippet opens a zenity dialog box showing existing tags where I can edit the tags and apply changes.
+
+1. I execute my script through file manager:
+
+![Custom action in filemanage](/images/filemanager.png)
+
+2. Then add/edit the tags:
+
+![Editing Tags](/images/tags.png)
+
+3. Corresponding links are created at appropriate location:
+
+![Links created](/images/link.png)
 
 ## License
 
