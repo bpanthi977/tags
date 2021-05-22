@@ -60,13 +60,13 @@
   (declare (type pathname .tag-file))
   (when (probe-file .tag-file)
     (loop for entry in (uiop:with-safe-io-syntax ()
-			(uiop:read-file-forms .tag-file))
+			 (uiop:read-file-forms .tag-file))
 	  for (file tags-list details) = entry
 	  for tags = (coerce tags-list '(vector string))
 	  collect (make-entry
 		   :file file
 		   :tags (make-array (length tags-list) :element-type 'string
-				     :initial-contents tags-list)
+							:initial-contents tags-list)
 		   :details (make-details :size (car details))))))
 
 (defun write-entries (entries .tag-file)
@@ -79,7 +79,7 @@
 		   (coerce (entry-tags entry) 'list)
 		   (list (details-size (entry-details entry))))
 	     :stream stream))))
-  
+
 
 (defun create-entry (file tags)
   (make-entry
@@ -107,11 +107,11 @@
 	  (*.tag-file* (.tag-file *$tag-directory*))
 	  (*entries* (if ,read-tags (read-entries *.tag-file*) *entries*))
 	  (*dirty-entries* (progn (when *dirty-entries* 
-					(print "Dirty entries exist: ")
-					(print *dirty-entries*))
+				    (print "Dirty entries exist: ")
+				    (print *dirty-entries*))
 				  ())))
      (prog1 (progn ,@body)
-	     (save-changes))))
+       (save-changes))))
 
 (defun push-change-in-entry (entry)
   (let ((e (find (entry-file entry) *entries* :test #'string-equal :key #'entry-file)))
@@ -126,45 +126,48 @@
   (declare (type (vector string) tags))
   (loop with dirs = ()
 	for tag across tags do
-	(loop for dir in (uiop:split-string tag :separator "/") do
-	      (push dir dirs))
+	  (loop for dir in (uiop:split-string tag :separator "/") do
+	    (push dir dirs))
 	finally (return (reverse dirs))))
 
-(defun update-tags (file tagstring)
-  "Changes tags associated with `file'; first in link structure and then in .tags file"
-  (declare (optimize (debug 3)))
-  (with-$tag-directory ((find-tags-directory file) :read-tags t)
-    (let* ((file (truename file))
-	   (old (find-entry file))
-	   (new (create-entry file (tags tagstring)))
-	   
-	   (additions (if old
-			  (u:difference (entry-tags new) (entry-tags old) :test #'string-equal)
-			  (entry-tags new)))
-	   (deletions (when old
-			(u:difference (entry-tags old) (entry-tags new) :test #'string-equal))))
+(defun update-tags* (file tagstring)
+  (let* ((file (truename file))
+	 (old (find-entry file))
+	 (new (create-entry file (tags tagstring)))
+	 
+	 (additions (if old
+			(u:difference (entry-tags new) (entry-tags old) :test #'string-equal)
+			(entry-tags new)))
+	 (deletions (when old
+		      (u:difference (entry-tags old) (entry-tags new) :test #'string-equal))))
 
-      (when (or (not (= (length deletions) 0))
-		(not (= (length additions) 0)))
-	(push-change-in-entry new)
-	
-	(when old
-	  (a:map-permutations (lambda (tags)
-				(declare (type (vector string) tags))
-				(let ((path (link-pathname file (tags->directories tags))))
-				  (print path)
-				  (when (probe-file path)
-				    (delete-file path))))
-			      (entry-tags old)))
-
+    (when (or (not (= (length deletions) 0))
+	      (not (= (length additions) 0)))
+      (push-change-in-entry new)
+      
+      (when old
 	(a:map-permutations (lambda (tags)
+			      (declare (type (vector string) tags))
+			      (let ((path (link-pathname file (tags->directories tags))))
+				(print path)
+				(when (probe-file path)
+				  (delete-file path))))
+			    (entry-tags old)))
+
+      (a:map-permutations (lambda (tags)
 			    (declare (type (vector string) tags))
 			    (let ((path (link-pathname file (tags->directories tags))))
 			      (print path)
 			      (unless (probe-file path) ; TODO: check if it points to same target
 				(create-link path file))))
 			  (entry-tags new)))
-      new)))
+    new))
+
+(defun update-tags (file tagstring)
+  "Changes tags associated with `file'; first in link structure and then in .tags file"
+  (declare (optimize (debug 3)))
+  (with-$tag-directory ((find-tags-directory file) :read-tags t)
+    (update-tags* file tagstring)))
 
 
 (defun existing-tags* (file)
@@ -172,7 +175,11 @@
     (when entry
       (entry-tags-string entry))))
 
-    
+(defun existing-tags (file)
+  (with-$tag-directory ((find-tags-directory file) :read-tags t)
+    (existing-tags* file)))
+
+
 
 
 
