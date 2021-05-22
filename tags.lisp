@@ -26,6 +26,7 @@
 
 (defun entry= (e1 e2)
   (and (string= (entry-file e1) (entry-file e2))
+       (= (length (entry-tags e1)) (length (entry-tags e2)))
        (every #'string= (entry-tags e1) (entry-tags e2))
        (details= (entry-details e1) (entry-details e2))))
 
@@ -109,8 +110,8 @@
 					(print "Dirty entries exist: ")
 					(print *dirty-entries*))
 				  ())))
-     (unwind-protect (progn ,@body)
-       (save-changes))))
+     (prog1 (progn ,@body)
+	     (save-changes))))
 
 (defun push-change-in-entry (entry)
   (let ((e (find (entry-file entry) *entries* :test #'string-equal :key #'entry-file)))
@@ -130,7 +131,7 @@
 	finally (return (reverse dirs))))
 
 (defun update-tags (file tagstring)
-  "Changes tags associated with `file'"
+  "Changes tags associated with `file'; first in link structure and then in .tags file"
   (declare (optimize (debug 3)))
   (with-$tag-directory ((find-tags-directory file) :read-tags t)
     (let* ((file (truename file))
@@ -143,24 +144,26 @@
 	   (deletions (when old
 			(u:difference (entry-tags old) (entry-tags new) :test #'string-equal))))
 
-
-      (unless (= (length deletions) 0)
-	(a:map-permutations (lambda (tags)
-			      (declare (type (vector string) tags))
-			      (let ((path (link-pathname file (tags->directories tags))))
-				(when (probe-file path)
-				  (delete-file path))))
-			    (entry-tags old)))
-      (unless (= (length additions) 0)
-	(a:map-permutations (lambda (tags)
-			      (declare (type (vector string) tags))
-			      (let ((path (link-pathname file (tags->directories tags))))
-				(unless (probe-file path) ; TODO: check if it points to same target
-				  (create-link path file))))
-			    (entry-tags new)))
       (when (or (not (= (length deletions) 0))
 		(not (= (length additions) 0)))
-	(push-change-in-entry new)))))
+	(push-change-in-entry new)
+	
+	(a:map-permutations (lambda (tags)
+			      (declare (type (vector string) tags))
+			      (let ((path (link-pathname file (tags->directories tags))))
+				(print path)
+				(when (probe-file path)
+				  (delete-file path))))
+			    (entry-tags old))
+
+	(a:map-permutations (lambda (tags)
+			    (declare (type (vector string) tags))
+			    (let ((path (link-pathname file (tags->directories tags))))
+			      (print path)
+			      (unless (probe-file path) ; TODO: check if it points to same target
+				(create-link path file))))
+			  (entry-tags new)))
+      new)))
 
 
 (defun existing-tags* (file)
