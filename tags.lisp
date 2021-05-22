@@ -148,13 +148,14 @@
 		(not (= (length additions) 0)))
 	(push-change-in-entry new)
 	
-	(a:map-permutations (lambda (tags)
-			      (declare (type (vector string) tags))
-			      (let ((path (link-pathname file (tags->directories tags))))
-				(print path)
-				(when (probe-file path)
-				  (delete-file path))))
-			    (entry-tags old))
+	(when old
+	  (a:map-permutations (lambda (tags)
+				(declare (type (vector string) tags))
+				(let ((path (link-pathname file (tags->directories tags))))
+				  (print path)
+				  (when (probe-file path)
+				    (delete-file path))))
+			      (entry-tags old)))
 
 	(a:map-permutations (lambda (tags)
 			    (declare (type (vector string) tags))
