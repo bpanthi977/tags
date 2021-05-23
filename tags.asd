@@ -8,7 +8,6 @@
   :serial t
   :depends-on (#:uiop #:osicat)
   :components ((:file "package")
-	       (:file "utils")
-	       (:file "fs")
+               (:file "utils")
+               (:file "fs")
                (:file "tags")))
-
