@@ -13,5 +13,5 @@
            #:existing-tags
            #:update-tags*
            #:update-tags
-           #:with-$tag-directory
+           #:with-tag-directory
            #:find-tags-directory))

@@ -2,7 +2,7 @@
 
 (in-package #:tags)
 
-(defparameter *$tag-directory* nil)
+(defparameter *tag-directory* nil)
 (defparameter *.tag-file* nil)
 (defparameter *entries* nil)
 (defparameter *dirty-entries* nil)
@@ -103,9 +103,9 @@
   (when *dirty-entries*
     (write-entries *entries* *.tag-file*)))
 
-(defmacro with-$tag-directory (($tag-directory &key (read-tags nil)) &body body)
-  `(let* ((*$tag-directory* ,$tag-directory)
-          (*.tag-file* (.tag-file *$tag-directory*))
+(defmacro with-tag-directory ((tag-directory &key (read-tags nil)) &body body)
+  `(let* ((*tag-directory* ,tag-directory)
+          (*.tag-file* (.tag-file *tag-directory*))
           (*entries* (if ,read-tags (read-entries *.tag-file*) *entries*))
           (*dirty-entries* (progn (when *dirty-entries*
                                     (print "Dirty entries exist: ")
@@ -160,14 +160,14 @@
                             (let ((path (link-pathname file (tags->directories tags))))
                               (print path)
                               (unless (probe-file path) ; TODO: check if it points to same target
-                                (create-link path file))))
+                                (create-link path file :relative t))))
                           (entry-tags new)))
     new))
 
 (defun update-tags (file tagstring)
   "Changes tags associated with `file'; first in link structure and then in .tags file"
   (declare (optimize (debug 3)))
-  (with-$tag-directory ((find-tags-directory file) :read-tags t)
+  (with-tag-directory ((find-tags-directory file) :read-tags t)
     (update-tags* file tagstring)))
 
 
@@ -177,5 +177,5 @@
       (entry-tags-string entry))))
 
 (defun existing-tags (file)
-  (with-$tag-directory ((find-tags-directory file) :read-tags t)
+  (with-tag-directory ((find-tags-directory file) :read-tags t)
     (existing-tags* file)))
