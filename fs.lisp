@@ -48,8 +48,23 @@ link-file should return '$tags/p/a/m/n"
 (defun .tag-file ($tag-directory)
   (merge-pathnames "./.tags" $tag-directory))
 
+(defun relative-pathname (from to)
+  "Relative pathname `from' to `to'.
+Note: directories of `from' and `to' must exist, since `truename' is used to compute the relative pathnames"
+  (let ((to-directory (pathname-directory (truename (uiop:pathname-directory-pathname to))))
+        (from-directory (pathname-directory (truename (uiop:pathname-directory-pathname from)))))
+
+    (loop for (dt . tailt) on to-directory
+          for (df . tailf) on from-directory
+          while (or (eql dt df)
+                    (string= dt df))
+          finally
+             (return (make-pathname :defaults to
+                                    :directory `(:relative ,@(make-list (1+ (length tailf)) :initial-element :up)
+                                                           ,dt ,@tailt))))))
 (defun create-link (link target &optional (relative nil relative-provided? ))
-  (when (and relative-provided?
+  (if (and relative-provided?
              (eql relative t))
-    (print "creating relative links not supported yet"))
-  (osicat:make-link link :target target))
+      (osicat:make-link link :target (namestring (relative-pathname link target)))
+      (osicat:make-link link :target target)))
+

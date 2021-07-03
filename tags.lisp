@@ -78,7 +78,8 @@
       (write (list (entry-file entry)
                    (coerce (entry-tags entry) 'list)
                    (list (details-size (entry-details entry))))
-             :stream stream))))
+             :stream stream)
+      (write-char #\Newline stream))))
 
 
 (defun create-entry (file tags)
