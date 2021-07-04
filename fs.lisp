@@ -4,6 +4,13 @@
 
 ;;; finds #tags directory
 
+(define-condition no-tags-directory ()
+  ())
+
+(defun directory-contents (dir)
+  (directory (merge-pathnames uiop:*wild-file-for-directory*
+                              dir)))
+
 (defun find-tags-directory% (dir)
   (declare (type pathname dir))
   (let* ((dir (truename dir))
@@ -11,7 +18,8 @@
     (if tags-directory
         tags-directory
         (let ((parent (uiop:pathname-parent-directory-pathname dir)))
-          (unless (uiop:pathname-equal parent dir)
+          (if (uiop:pathname-equal parent dir)
+              (error 'no-tags-directory)
             ;; because parent of #p"/" is #p"/" which could result to infinite recursion
             (find-tags-directory% parent))))))
 
@@ -22,9 +30,9 @@
                             (uiop:pathname-parent-directory-pathname file-or-dir)
                             (uiop:pathname-directory-pathname file-or-dir))))
 
-(defun make-relative-pathname (directories base)
-  (merge-pathnames (make-pathname :directory (cons :relative directories))
-                   base))
+(defun make-relative-pathname (&key to from)
+  (merge-pathnames (make-pathname :directory (cons :relative to))
+                   from))
 
 (defun link-pathname (file tags-directories)
   "Returns the pathname to the `link' file that needs to be created under a series of `tags' for the `file'
@@ -34,7 +42,7 @@ link-file should return '#tags/p/a/m/n"
            (type list tags-directories)
            (optimize (debug 3)))
   (let ((tag-directory (ensure-directories-exist
-                        (make-relative-pathname tags-directories *tag-directory*))))
+                        (make-relative-pathname :to tags-directories :from *tag-directory*))))
     (if (uiop:directory-pathname-p file)
         (make-pathname :name (car (last (pathname-directory file)))
                        :defaults *tag-directory*)
