@@ -3,7 +3,8 @@
 (defpackage #:tags/utils
   (:use :cl)
   (:export #:difference
-           #:join-vector))
+           #:join-vector
+           #:equal-set))
 
 (defpackage #:tags
   (:use #:cl)

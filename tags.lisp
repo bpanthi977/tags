@@ -131,28 +131,32 @@
             (push dir dirs))
         finally (return (reverse dirs))))
 
+(defun delete-empty-dirs (dirs)
+  (when dirs
+    (let ((dir (make-relative-pathname :to dirs
+                                       :from *tag-directory*)))
+      (unless (directory-contents dir)
+        ;; i.e. empty directory
+        (uiop:delete-empty-directory dir))
+      (delete-empty-dirs (butlast dirs)))))
+
 (defun update-tags* (file tagstring)
   (let* ((file (truename file))
          (old (find-entry file))
-         (new (create-entry file (tags tagstring)))
+         (new (create-entry file (tags tagstring))))
 
-         (additions (if old
-                        (u:difference (entry-tags new) (entry-tags old) :test #'string-equal)
-                        (entry-tags new)))
-         (deletions (when old
-                      (u:difference (entry-tags old) (entry-tags new) :test #'string-equal))))
-
-    (when (or (not (= (length deletions) 0))
-              (not (= (length additions) 0)))
+    (unless (u:equal-set (entry-tags old) (entry-tags new) :test #'string-equal)
       (push-change-in-entry new)
 
       (when old
         (a:map-permutations (lambda (tags)
                               (declare (type (vector string) tags))
-                              (let ((path (link-pathname file (tags->directories tags))))
+                              (let* ((dirs (tags->directories tags))
+                                     (path (link-pathname file dirs)))
                                 (print path)
                                 (when (probe-file path)
-                                  (delete-file path))))
+                                  (delete-file path))
+                                (delete-empty-dirs dirs)))
                             (entry-tags old)))
 
       (a:map-permutations (lambda (tags)

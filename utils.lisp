@@ -7,6 +7,13 @@
 		  :test test
 		  :key key))
 
+(defun equal-set (sequence1 sequence2 &key test)
+  "Do sequence1 and sequence2 contain same elements? (order doesn't matter)"
+  (and (= (length sequence1) (length sequence2))
+       (every #'(lambda (el1)
+                  (find el1 sequence2 :test test))
+              sequence1)))
+
 (defun join-vector (vector separator)
   (declare (type (vector string) vector)
 	   (type character separator))
