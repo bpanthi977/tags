@@ -145,7 +145,8 @@
          (old (find-entry file))
          (new (create-entry file (tags tagstring))))
 
-    (unless (u:equal-set (entry-tags old) (entry-tags new) :test #'string-equal)
+    (when (or (not old)
+              (not (u:equal-set (entry-tags old) (entry-tags new) :test #'string-equal)))
       (push-change-in-entry new)
 
       (when old
